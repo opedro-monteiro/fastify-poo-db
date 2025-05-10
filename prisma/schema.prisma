@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model Categoria {
+  id       Int       @id @default(autoincrement()) 
+  nome     String    @unique @db.VarChar(50)  
+  receitas Receita[]
+}
+
+model Ingrediente {
+  id        Int                  @id @default(autoincrement())
+  nome      String               @unique @db.VarChar(40)
+  descricao String?              @db.VarChar(200)
+  receitas  IngredienteReceita[]
+}
+
+model Livro {
+  id       Int       @id @default(autoincrement())
+  titulo   String    @unique @db.VarChar(200)
+  isbn     String    @unique @db.VarChar(17)
+  receitas Receita[]
+}
+
+model Restaurante {
+  id          Int          @id @default(autoincrement())
+  nome        String
+  cozinheiros Cozinheiro[]
+}
+
+// 3. Tabelas dependentes (com FKs)
+model Cozinheiro {
+  id            Int          @id @default(autoincrement())
+  rg            String       @unique @db.VarChar(20)
+  nome          String       @db.VarChar(80)
+  salario       Float
+  dt_contrato   DateTime
+  nome_fantasia String?      @db.VarChar(80)
+  receitas      Receita[]
+  restauranteId Int?
+  restaurante   Restaurante? @relation(fields: [restauranteId], references: [id])
+}
+
+model Degustador {
+  id          Int      @id @default(autoincrement())
+  rg          String   @unique @db.VarChar(20)
+  nome        String
+  salario     Float
+  dt_contrato DateTime
+  testes      Teste[]
+}
+
+model Editor {
+  id          Int      @id @default(autoincrement())
+  rg          String   @unique @db.VarChar(20)
+  nome        String
+  salario     Float
+  dt_contrato DateTime
+}
+
+// 4. Tabelas com múltiplas FKs
+model Receita {
+  id           Int                  @id @default(autoincrement())
+  nome         String               @unique @db.VarChar(80)
+  dt_criacao   DateTime
+  categoria    Categoria            @relation(fields: [categoriaId], references: [id])
+  categoriaId  Int
+  cozinheiro   Cozinheiro           @relation(fields: [cozinheiroId], references: [id])
+  cozinheiroId Int
+  livro        Livro?               @relation(fields: [livroId], references: [id])
+  livroId      Int?
+  ingredientes IngredienteReceita[]
+  testes       Teste[]
+}
+
+// 5. Tabela de relacionamento N-N (Ingredientes-Receitas)
+model IngredienteReceita {
+  id            Int         @id @default(autoincrement())
+  ingrediente   Ingrediente @relation(fields: [ingredienteId], references: [id])
+  ingredienteId Int
+  receita       Receita     @relation(fields: [receitaId], references: [id])
+  receitaId     Int
+  quantidade    Float
+  medida        String
+
+  @@unique([ingredienteId, receitaId]) // Evita duplicatas
+}
+
+// 6. Tabela de Testes
+model Teste {
+  id           Int        @id @default(autoincrement())
+  receita      Receita    @relation(fields: [receitaId], references: [id])
+  receitaId    Int
+  degustador   Degustador @relation(fields: [degustadorId], references: [id])
+  degustadorId Int
+  dt_teste     DateTime
+  nota         Float
+}
