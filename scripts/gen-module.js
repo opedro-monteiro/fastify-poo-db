@@ -198,6 +198,7 @@ export async function ${lower}Routes(app: FastifyTypedInstance) {
     {
       schema: {
         body: create${capitalized}Schema,
+        tags: ['${lower}s'],
         response: {
           201: ${lower}Schema,
           ...commonResponseSchema,
@@ -211,6 +212,7 @@ export async function ${lower}Routes(app: FastifyTypedInstance) {
     '/${lower}s',
     {
       schema: {
+        tags: ['${lower}s'],
         response: {
           200: z.array(${lower}Schema),
           ...commonResponseSchema,
@@ -224,6 +226,7 @@ export async function ${lower}Routes(app: FastifyTypedInstance) {
     '/${lower}s/:id',
     {
       schema: {
+        tags: ['${lower}s'],
         params: idParamSchema,
         response: {
           200: ${lower}Schema,
@@ -238,6 +241,7 @@ export async function ${lower}Routes(app: FastifyTypedInstance) {
     '/${lower}s/:id',
     {
       schema: {
+        tags: ['${lower}s'],
         params: idParamSchema,
         body: update${capitalized}Schema,
         response: {
@@ -253,6 +257,7 @@ export async function ${lower}Routes(app: FastifyTypedInstance) {
     '/${lower}s/:id',
     {
       schema: {
+        tags: ['${lower}s'],
         params: idParamSchema,
         response: {
           200: z.object({ message: z.string() }),
