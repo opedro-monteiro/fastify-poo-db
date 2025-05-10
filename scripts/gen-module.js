@@ -11,7 +11,7 @@ if (!moduleName) {
 const capitalized = moduleName.charAt(0).toUpperCase() + moduleName.slice(1)
 const lower = moduleName.toLowerCase()
 
-const baseDir = path.join(__dirname, 'src', moduleName)
+const baseDir = path.join(process.cwd(), 'src', 'modules', moduleName)
 
 if (fs.existsSync(baseDir)) {
   console.error('Esse módulo já existe!')
