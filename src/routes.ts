@@ -2,6 +2,7 @@ import { bookRoutes } from './modules/book/book.routes'
 import { categoryRoutes } from './modules/category/category.routes'
 import { cooksRoutes } from './modules/cooks/cooks.routes'
 import { ingredientRoutes } from './modules/ingredient/ingredient.routes'
+import { recipeRoutes } from './modules/recipe/recipe.routes'
 import { restaurantRoutes } from './modules/restaurant/restaurant.routes'
 import { tasterRoutes } from './modules/taster/taster.routes'
 import type { FastifyTypedInstance } from './types'
@@ -13,4 +14,5 @@ export async function routes(app: FastifyTypedInstance) {
   app.register(restaurantRoutes, { prefix: '/api/v1' })
   app.register(cooksRoutes, { prefix: '/api/v1' })
   app.register(tasterRoutes, { prefix: '/api/v1' })
+  app.register(recipeRoutes, { prefix: '/api/v1' })
 }
