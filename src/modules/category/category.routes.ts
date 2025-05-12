@@ -21,6 +21,7 @@ export async function categoryRoutes(app: FastifyTypedInstance) {
     {
       schema: {
         body: createCategorySchema,
+        tags: ['categories'],
         response: {
           201: categorySchema,
           ...commonResponseSchema,
@@ -34,6 +35,7 @@ export async function categoryRoutes(app: FastifyTypedInstance) {
     '/categories',
     {
       schema: {
+        tags: ['categories'],
         response: {
           200: z.array(categorySchema),
           ...commonResponseSchema,
@@ -48,6 +50,7 @@ export async function categoryRoutes(app: FastifyTypedInstance) {
     {
       schema: {
         params: idParamSchema,
+        tags: ['categories'],
         response: {
           200: categorySchema,
           ...commonResponseSchema,
@@ -63,6 +66,7 @@ export async function categoryRoutes(app: FastifyTypedInstance) {
       schema: {
         params: idParamSchema,
         body: updateCategorySchema,
+        tags: ['categories'],
         response: {
           200: categorySchema,
           ...commonResponseSchema,
@@ -77,6 +81,7 @@ export async function categoryRoutes(app: FastifyTypedInstance) {
     {
       schema: {
         params: idParamSchema,
+        tags: ['categories'],
         response: {
           200: z.object({ message: z.string() }),
           ...commonResponseSchema,
