@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
+import { NotFoundError } from '../../error'
 import { idParamSchema } from '../../schemas/common.schema'
 import { createRecipeSchema, updateRecipeSchema } from './recipe.schema'
 import {
@@ -13,14 +14,23 @@ export async function createRecipeController(
   req: FastifyRequest,
   res: FastifyReply
 ) {
-  const parsed = createRecipeSchema.safeParse(req.body)
+  try {
+    const parsed = createRecipeSchema.safeParse(req.body)
 
-  if (!parsed.success) {
-    return res.status(400).send(parsed.error.format())
+    if (!parsed.success) {
+      return res.status(400).send(parsed.error.format())
+    }
+
+    const item = await createRecipe(parsed.data)
+    return res.status(201).send(item)
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return res.status(404).send({ message: error.message })
+    }
+
+    req.log.error(error)
+    return res.status(500).send({ message: 'Erro interno do servidor' })
   }
-
-  const item = await createRecipe(parsed.data)
-  return res.status(201).send(item)
 }
 
 export async function listRecipesController(
@@ -43,8 +53,7 @@ export async function getRecipeByIdController(
 
   const item = await getRecipeById(id)
 
-  if (!item)
-    return res.status(404).send({ message: 'Recipe não encontrado' })
+  if (!item) return res.status(404).send({ message: 'Recipe não encontrado' })
 
   return res.send(item)
 }
@@ -53,20 +62,29 @@ export async function updateRecipeController(
   req: FastifyRequest,
   res: FastifyReply
 ) {
-  const parsed = idParamSchema.safeParse(req.params)
+  try {
+    const parsed = idParamSchema.safeParse(req.params)
 
-  if (!parsed.success) return res.status(400).send(parsed.error.format())
+    if (!parsed.success) return res.status(400).send(parsed.error.format())
 
-  const { id } = parsed.data
+    const { id } = parsed.data
 
-  const parsedBody = updateRecipeSchema.safeParse(req.body)
+    const parsedBody = updateRecipeSchema.safeParse(req.body)
 
-  if (!parsedBody.success)
-    return res.status(400).send(parsedBody.error.format())
+    if (!parsedBody.success)
+      return res.status(400).send(parsedBody.error.format())
 
-  const item = await updateRecipe(id, parsedBody.data)
+    const item = await updateRecipe(id, parsedBody.data)
 
-  return res.send(item)
+    return res.send(item)
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return res.status(404).send({ message: error.message })
+    }
+
+    req.log.error(error)
+    return res.status(500).send({ message: 'Erro interno do servidor' })
+  }
 }
 
 export async function deleteRecipeController(

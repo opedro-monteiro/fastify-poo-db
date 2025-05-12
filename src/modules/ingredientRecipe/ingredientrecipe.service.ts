@@ -1,3 +1,4 @@
+import { NotFoundError } from '../../error'
 import { prisma } from '../../libs/prisma'
 import type {
   CreateIngredientRecipeInput,
@@ -7,6 +8,26 @@ import type {
 export async function createIngredientRecipe(
   data: CreateIngredientRecipeInput
 ) {
+  const findIngredient = await prisma.ingrediente.findUnique({
+    where: {
+      id: data.ingredienteId,
+    },
+  })
+
+  if (!findIngredient) {
+    throw new NotFoundError('Ingrediente não encontrado')
+  }
+
+  const findRecipe = await prisma.receita.findUnique({
+    where: {
+      id: data.receitaId,
+    },
+  })
+
+  if (!findRecipe) {
+    throw new NotFoundError('Receita não encontrada')
+  }
+
   return prisma.ingredienteReceita.create({ data })
 }
 

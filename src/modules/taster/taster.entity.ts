@@ -4,5 +4,4 @@ export interface Taster {
   nome: string
   salario: number
   dt_contrato: Date | string
-  // testes: Teste[]
 }
