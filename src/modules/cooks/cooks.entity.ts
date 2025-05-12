@@ -4,7 +4,6 @@ export interface Cooks {
   nome: string
   salario: number
   dt_contrato: Date | string
-  nome_fantasia: string
-  // receitas: Receita[]
-  restauranteId: number
+  nome_fantasia: string | null
+  restauranteId: number | null
 }

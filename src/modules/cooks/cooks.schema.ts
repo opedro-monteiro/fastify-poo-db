@@ -6,9 +6,8 @@ export const cooksSchema = z.object({
   rg: z.string(),
   salario: z.number(),
   dt_contrato: z.coerce.date(),
-  nome_fantasia: z.string(),
-  // receitas: Receita[]
-  restauranteId: z.number(),
+  nome_fantasia: z.string().nullable(),
+  restauranteId: z.number().nullable(),
 })
 export type Cooks = z.infer<typeof cooksSchema>
 
@@ -17,8 +16,8 @@ export const createCooksSchema = z.object({
   rg: z.string(),
   salario: z.number(),
   dt_contrato: z.coerce.date(),
-  nome_fantasia: z.string(),
-  restauranteId: z.number(),
+  nome_fantasia: z.string().nullable(),
+  restauranteId: z.number().nullable(),
 })
 export type CreateCooksInput = z.infer<typeof createCooksSchema>
 

@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
+import { NotFoundError } from '../../error'
 import { idParamSchema } from '../../schemas/common.schema'
 import { createCooksSchema, updateCooksSchema } from './cooks.schema'
 import {
@@ -13,14 +14,23 @@ export async function createCooksController(
   req: FastifyRequest,
   res: FastifyReply
 ) {
-  const parsed = createCooksSchema.safeParse(req.body)
+  try {
+    const parsed = createCooksSchema.safeParse(req.body)
 
-  if (!parsed.success) {
-    return res.status(400).send(parsed.error.format())
+    if (!parsed.success) {
+      return res.status(400).send(parsed.error.format())
+    }
+
+    const item = await createCooks(parsed.data)
+    return res.status(201).send(item)
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return res.status(404).send({ message: error.message })
+    }
+
+    req.log.error(error)
+    return res.status(500).send({ message: 'Erro interno do servidor' })
   }
-
-  const item = await createCooks(parsed.data)
-  return res.status(201).send(item)
 }
 
 export async function listCookssController(
@@ -43,8 +53,7 @@ export async function getCooksByIdController(
 
   const item = await getCooksById(id)
 
-  if (!item)
-    return res.status(404).send({ message: 'Cooks não encontrado' })
+  if (!item) return res.status(404).send({ message: 'Cooks não encontrado' })
 
   return res.send(item)
 }
@@ -53,20 +62,29 @@ export async function updateCooksController(
   req: FastifyRequest,
   res: FastifyReply
 ) {
-  const parsed = idParamSchema.safeParse(req.params)
+  try {
+    const parsed = idParamSchema.safeParse(req.params)
 
-  if (!parsed.success) return res.status(400).send(parsed.error.format())
+    if (!parsed.success) return res.status(400).send(parsed.error.format())
 
-  const { id } = parsed.data
+    const { id } = parsed.data
 
-  const parsedBody = updateCooksSchema.safeParse(req.body)
+    const parsedBody = updateCooksSchema.safeParse(req.body)
 
-  if (!parsedBody.success)
-    return res.status(400).send(parsedBody.error.format())
+    if (!parsedBody.success)
+      return res.status(400).send(parsedBody.error.format())
 
-  const item = await updateCooks(id, parsedBody.data)
+    const item = await updateCooks(id, parsedBody.data)
 
-  return res.send(item)
+    return res.send(item)
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return res.status(404).send({ message: error.message })
+    }
+
+    req.log.error(error)
+    return res.status(500).send({ message: 'Erro interno do servidor' })
+  }
 }
 
 export async function deleteCooksController(
