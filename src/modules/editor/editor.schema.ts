@@ -4,7 +4,7 @@ export const editorSchema = z.object({
   id: z.number(),
   rg: z.string(),
   nome: z.string(),
-  salario: z.number(),
+  salario: z.coerce.number(),
   dt_contrato: z.coerce.date(),
 })
 export type Editor = z.infer<typeof editorSchema>
@@ -12,7 +12,7 @@ export type Editor = z.infer<typeof editorSchema>
 export const createEditorSchema = z.object({
   rg: z.string(),
   nome: z.string(),
-  salario: z.number(),
+  salario: z.coerce.number(),
   dt_contrato: z.coerce.date(),
 })
 export type CreateEditorInput = z.infer<typeof createEditorSchema>

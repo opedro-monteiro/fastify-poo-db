@@ -4,7 +4,7 @@ export const tasterSchema = z.object({
   id: z.number(),
   rg: z.string(),
   nome: z.string(),
-  salario: z.number(),
+  salario: z.coerce.number(),
   dt_contrato: z.coerce.date(),
 })
 export type Taster = z.infer<typeof tasterSchema>
@@ -12,7 +12,7 @@ export type Taster = z.infer<typeof tasterSchema>
 export const createTasterSchema = z.object({
   rg: z.string(),
   nome: z.string(),
-  salario: z.number(),
+  salario: z.coerce.number(),
   dt_contrato: z.coerce.date(),
 })
 export type CreateTasterInput = z.infer<typeof createTasterSchema>

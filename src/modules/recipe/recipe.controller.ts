@@ -93,11 +93,20 @@ export async function deleteRecipeController(
 ) {
   const parsed = idParamSchema.safeParse(req.params)
 
-  if (!parsed.success) return res.status(400).send(parsed.error.format())
+  if (!parsed.success) {
+    return res.status(400).send({
+      message: 'Parâmetros inválidos.',
+    })
+  }
 
   const { id } = parsed.data
 
-  await deleteRecipe(id)
-
-  return res.send({ message: 'Recipe deletado com sucesso' })
+  try {
+    await deleteRecipe(id)
+    return res.status(200).send({ message: 'Receita deletada com sucesso.' })
+  } catch (error) {
+    return res.status(400).send({
+      message: (error as Error).message ?? 'Erro ao deletar receita.',
+    })
+  }
 }
