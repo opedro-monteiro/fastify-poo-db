@@ -3,6 +3,7 @@ import { categoryRoutes } from './modules/category/category.routes'
 import { cooksRoutes } from './modules/cooks/cooks.routes'
 import { editorRoutes } from './modules/editor/editor.routes'
 import { ingredientRoutes } from './modules/ingredient/ingredient.routes'
+import { ingredientrecipeRoutes } from './modules/ingredientRecipe/ingredientrecipe.routes'
 import { recipeRoutes } from './modules/recipe/recipe.routes'
 import { restaurantRoutes } from './modules/restaurant/restaurant.routes'
 import { tasterRoutes } from './modules/taster/taster.routes'
@@ -19,4 +20,5 @@ export async function routes(app: FastifyTypedInstance) {
   app.register(categoryRoutes, { prefix: '/api/v1' })
   app.register(ingredientRoutes, { prefix: '/api/v1' })
   app.register(restaurantRoutes, { prefix: '/api/v1' })
+  app.register(ingredientrecipeRoutes, { prefix: '/api/v1' })
 }
