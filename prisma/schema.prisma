@@ -13,9 +13,10 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 model Categoria {
-  id       Int       @id @default(autoincrement()) 
-  nome     String    @unique @db.VarChar(50)  
+  id       Int       @id @default(autoincrement())
+  nome     String    @unique @db.VarChar(50)
   receitas Receita[]
 }
 
@@ -100,9 +101,9 @@ model IngredienteReceita {
 // 6. Tabela de Testes
 model Teste {
   id           Int        @id @default(autoincrement())
-  receita      Receita    @relation(fields: [receitaId], references: [id] ) // add onDelete: Cascade
+  receita      Receita    @relation(fields: [receitaId], references: [id], onDelete: Cascade) // add onDelete: Cascade
   receitaId    Int
-  degustador   Degustador @relation(fields: [degustadorId], references: [id]) // add onDelete: Cascade
+  degustador   Degustador @relation(fields: [degustadorId], references: [id], onDelete: Cascade) // add onDelete: Cascade
   degustadorId Int
   dt_teste     DateTime
   nota         Float
