@@ -87,9 +87,9 @@ model Receita {
 // 5. Tabela de relacionamento N-N (Ingredientes-Receitas)
 model IngredienteReceita {
   id            Int         @id @default(autoincrement())
-  ingrediente   Ingrediente @relation(fields: [ingredienteId], references: [id])
+  ingrediente   Ingrediente @relation(fields: [ingredienteId], references: [id], onDelete: Cascade)
   ingredienteId Int
-  receita       Receita     @relation(fields: [receitaId], references: [id])
+  receita       Receita     @relation(fields: [receitaId], references: [id], onDelete: Cascade)
   receitaId     Int
   quantidade    Float
   medida        String
@@ -100,9 +100,9 @@ model IngredienteReceita {
 // 6. Tabela de Testes
 model Teste {
   id           Int        @id @default(autoincrement())
-  receita      Receita    @relation(fields: [receitaId], references: [id])
+  receita      Receita    @relation(fields: [receitaId], references: [id] ) // add onDelete: Cascade
   receitaId    Int
-  degustador   Degustador @relation(fields: [degustadorId], references: [id])
+  degustador   Degustador @relation(fields: [degustadorId], references: [id]) // add onDelete: Cascade
   degustadorId Int
   dt_teste     DateTime
   nota         Float

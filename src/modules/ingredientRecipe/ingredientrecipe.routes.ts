@@ -17,11 +17,11 @@ import {
 
 export async function ingredientrecipeRoutes(app: FastifyTypedInstance) {
   app.post(
-    '/ingredientrecipes',
+    '/ingredients-recipes',
     {
       schema: {
         body: createIngredientRecipeSchema,
-        tags: ['ingredientrecipes'],
+        tags: ['ingredients-recipes'],
         response: {
           201: ingredientrecipeSchema,
           ...commonResponseSchema,
@@ -32,10 +32,10 @@ export async function ingredientrecipeRoutes(app: FastifyTypedInstance) {
   )
 
   app.get(
-    '/ingredientrecipes',
+    '/ingredients-recipes',
     {
       schema: {
-        tags: ['ingredientrecipes'],
+        tags: ['ingredients-recipes'],
         response: {
           200: z.array(ingredientrecipeSchema),
           ...commonResponseSchema,
@@ -46,10 +46,10 @@ export async function ingredientrecipeRoutes(app: FastifyTypedInstance) {
   )
 
   app.get(
-    '/ingredientrecipes/:id',
+    '/ingredients-recipes/:id',
     {
       schema: {
-        tags: ['ingredientrecipes'],
+        tags: ['ingredients-recipes'],
         params: idParamSchema,
         response: {
           200: ingredientrecipeSchema,
@@ -61,10 +61,10 @@ export async function ingredientrecipeRoutes(app: FastifyTypedInstance) {
   )
 
   app.put(
-    '/ingredientrecipes/:id',
+    '/ingredients-recipes/:id',
     {
       schema: {
-        tags: ['ingredientrecipes'],
+        tags: ['ingredients-recipes'],
         params: idParamSchema,
         body: updateIngredientRecipeSchema,
         response: {
@@ -77,10 +77,10 @@ export async function ingredientrecipeRoutes(app: FastifyTypedInstance) {
   )
 
   app.delete(
-    '/ingredientrecipes/:id',
+    '/ingredients-recipes/:id',
     {
       schema: {
-        tags: ['ingredientrecipes'],
+        tags: ['ingredients-recipes'],
         params: idParamSchema,
         response: {
           200: z.object({ message: z.string() }),

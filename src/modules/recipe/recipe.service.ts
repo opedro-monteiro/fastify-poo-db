@@ -354,23 +354,34 @@ export async function updateRecipe(
 
 export async function deleteRecipe(id: string) {
   try {
-    return await prisma.receita.delete({
-      where: { id: Number(id) },
+    const recipeId = Number(id)
+
+    // Deleta os testes relacionados
+    await prisma.teste.deleteMany({
+      where: { receitaId: recipeId },
     })
+
+    // Deleta os ingredientes relacionados
+    await prisma.ingredienteReceita.deleteMany({
+      where: { receitaId: recipeId },
+    })
+
+    // Deleta a receita
+    await prisma.receita.delete({
+      where: { id: recipeId },
+    })
+
+    return { message: 'Receita deletada com sucesso.' }
   } catch (error) {
     if (error instanceof PrismaClientKnownRequestError) {
-      // Violação de chave estrangeira
       if (error.code === 'P2003') {
         throw new Error('Não é possível deletar: receita possui dependências.')
       }
-
-      // Registro não encontrado
       if (error.code === 'P2025') {
         throw new Error('Receita não encontrada.')
       }
     }
 
-    // Erro genérico
     throw new Error('Erro interno ao tentar deletar a receita.')
   }
 }
