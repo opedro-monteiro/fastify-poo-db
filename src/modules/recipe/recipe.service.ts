@@ -1,5 +1,11 @@
 import { prisma } from '../../libs/prisma'
-import type { CreateRecipeInput, UpdateRecipeInput } from './recipe.schema'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
+
+import type {
+  CreateRecipeInput,
+  Recipe,
+  UpdateRecipeInput,
+} from './recipe.schema'
 
 async function isValid(data: CreateRecipeInput) {
   const findCategory = await prisma.categoria.findUnique({
@@ -33,7 +39,7 @@ async function isValid(data: CreateRecipeInput) {
   return true
 }
 
-export async function createRecipe(data: CreateRecipeInput) {
+export async function createRecipe(data: CreateRecipeInput): Promise<Recipe> {
   try {
     if (!isValid(data)) {
       throw new Error('Categoria inválida')
@@ -51,7 +57,6 @@ export async function createRecipe(data: CreateRecipeInput) {
 
     // Transação para garantir consistência entre criação da receita e ingredientes
     const recipeCreated = await prisma.$transaction(async tx => {
-      // Criação da receita
       const receita = await tx.receita.create({
         data: {
           nome: data.nome,
@@ -67,11 +72,31 @@ export async function createRecipe(data: CreateRecipeInput) {
           categoriaId: true,
           cozinheiroId: true,
           livroId: true,
+          livro: {
+            select: {
+              titulo: true,
+            },
+          },
+          categoria: {
+            select: {
+              nome: true,
+            },
+          },
+          cozinheiro: {
+            select: {
+              nome: true,
+            },
+          },
           ingredientes: {
             select: {
               ingredienteId: true,
               quantidade: true,
               medida: true,
+              ingrediente: {
+                select: {
+                  nome: true,
+                },
+              },
             },
           },
         },
@@ -90,18 +115,85 @@ export async function createRecipe(data: CreateRecipeInput) {
       return receita
     })
 
-    return recipeCreated
+    return {
+      id: recipeCreated.id,
+      nome: recipeCreated.nome,
+      dt_criacao: recipeCreated.dt_criacao,
+      categoriaId: recipeCreated.categoriaId,
+      cozinheiroId: recipeCreated.cozinheiroId,
+      livroId: recipeCreated.livroId,
+      nomeCategoria: recipeCreated.categoria.nome,
+      nomeCozinheiro: recipeCreated.cozinheiro.nome,
+      nomeLivro: recipeCreated.livro?.titulo ?? null,
+      ingredientes: recipeCreated.ingredientes.map(ingrediente => ({
+        ingredienteId: ingrediente.ingredienteId,
+        quantidade: ingrediente.quantidade,
+        medida: ingrediente.medida,
+        nome: ingrediente.ingrediente.nome,
+      })),
+    }
   } catch (error) {
     console.log(error)
+    throw new Error(`Erro ao criar receita: ${error}`)
   }
 }
 
-export async function listRecipes() {
-  return prisma.receita.findMany({
-    include: {
-      ingredientes: true,
+export async function listRecipes(): Promise<Recipe[]> {
+  const recipes = await prisma.receita.findMany({
+    select: {
+      id: true,
+      nome: true,
+      dt_criacao: true,
+      categoriaId: true,
+      cozinheiroId: true,
+      livroId: true,
+      livro: {
+        select: {
+          titulo: true,
+        },
+      },
+      categoria: {
+        select: {
+          nome: true,
+        },
+      },
+      cozinheiro: {
+        select: {
+          nome: true,
+        },
+      },
+      ingredientes: {
+        select: {
+          ingredienteId: true,
+          quantidade: true,
+          medida: true,
+          ingrediente: {
+            select: {
+              nome: true,
+            },
+          },
+        },
+      },
     },
   })
+
+  return recipes.map(item => ({
+    id: item.id,
+    nome: item.nome,
+    dt_criacao: item.dt_criacao,
+    categoriaId: item.categoriaId,
+    cozinheiroId: item.cozinheiroId,
+    livroId: item.livroId,
+    nomeCategoria: item.categoria.nome,
+    nomeCozinheiro: item.cozinheiro.nome,
+    nomeLivro: item.livro?.titulo ?? null,
+    ingredientes: item.ingredientes.map(ingrediente => ({
+      ingredienteId: ingrediente.ingredienteId,
+      quantidade: ingrediente.quantidade,
+      medida: ingrediente.medida,
+      nome: ingrediente.ingrediente.nome,
+    })),
+  }))
 }
 
 export async function getRecipeById(id: string) {
@@ -125,7 +217,10 @@ export async function getRecipeById(id: string) {
   })
 }
 
-export async function updateRecipe(id: string, data: UpdateRecipeInput) {
+export async function updateRecipe(
+  id: string,
+  data: UpdateRecipeInput
+): Promise<Recipe> {
   try {
     const existingRecipe = await prisma.receita.findUnique({
       where: { id: Number(id) },
@@ -186,11 +281,31 @@ export async function updateRecipe(id: string, data: UpdateRecipeInput) {
           categoriaId: true,
           cozinheiroId: true,
           livroId: true,
+          livro: {
+            select: {
+              titulo: true,
+            },
+          },
+          categoria: {
+            select: {
+              nome: true,
+            },
+          },
+          cozinheiro: {
+            select: {
+              nome: true,
+            },
+          },
           ingredientes: {
             select: {
               ingredienteId: true,
               quantidade: true,
               medida: true,
+              ingrediente: {
+                select: {
+                  nome: true,
+                },
+              },
             },
           },
         },
@@ -214,13 +329,48 @@ export async function updateRecipe(id: string, data: UpdateRecipeInput) {
       return updated
     })
 
-    return recipeUpdated
+    return {
+      id: recipeUpdated.id,
+      nome: recipeUpdated.nome,
+      dt_criacao: recipeUpdated.dt_criacao,
+      categoriaId: recipeUpdated.categoriaId,
+      cozinheiroId: recipeUpdated.cozinheiroId,
+      livroId: recipeUpdated.livroId,
+      nomeCategoria: recipeUpdated.categoria.nome,
+      nomeCozinheiro: recipeUpdated.cozinheiro.nome,
+      nomeLivro: recipeUpdated.livro?.titulo ?? null,
+      ingredientes: recipeUpdated.ingredientes.map(ingrediente => ({
+        ingredienteId: ingrediente.ingredienteId,
+        quantidade: ingrediente.quantidade,
+        medida: ingrediente.medida,
+        nome: ingrediente.ingrediente.nome,
+      })),
+    }
   } catch (error) {
     console.error(error)
-    throw new Error('Erro ao atualizar receita')
+    throw new Error(`Erro ao atualizar receita: ${error}`)
   }
 }
 
 export async function deleteRecipe(id: string) {
-  return prisma.receita.delete({ where: { id: Number(id) } })
+  try {
+    return await prisma.receita.delete({
+      where: { id: Number(id) },
+    })
+  } catch (error) {
+    if (error instanceof PrismaClientKnownRequestError) {
+      // Violação de chave estrangeira
+      if (error.code === 'P2003') {
+        throw new Error('Não é possível deletar: receita possui dependências.')
+      }
+
+      // Registro não encontrado
+      if (error.code === 'P2025') {
+        throw new Error('Receita não encontrada.')
+      }
+    }
+
+    // Erro genérico
+    throw new Error('Erro interno ao tentar deletar a receita.')
+  }
 }
