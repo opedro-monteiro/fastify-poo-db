@@ -1,8 +1,9 @@
-import { prisma } from '../../libs/prisma'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
+import { prisma } from '../../libs/prisma'
 
 import type {
   CreateRecipeInput,
+  ListRecipesQuery,
   Recipe,
   UpdateRecipeInput,
 } from './recipe.schema'
@@ -138,7 +139,10 @@ export async function createRecipe(data: CreateRecipeInput): Promise<Recipe> {
   }
 }
 
-export async function listRecipes(): Promise<Recipe[]> {
+export async function listRecipes(filters: ListRecipesQuery): Promise<Recipe[]> {
+
+  const { search, page = 1, limit = 10, ingredients, categories, sortBy = 'nome', sortOrder = 'asc' } = filters
+
   const recipes = await prisma.receita.findMany({
     select: {
       id: true,
@@ -175,213 +179,256 @@ export async function listRecipes(): Promise<Recipe[]> {
         },
       },
     },
+    where: {
+      AND: [
+        search
+          ? {
+            nome: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          }
+          : {},
+
+        categories?.length
+          ? {
+            categoriaId: {
+              in: categories.map(Number),
+            },
+          }
+          : {},
+
+        ingredients?.length
+          ? {
+            ingredientes: {
+              some: {
+                ingrediente: {
+                  OR: ingredients.map((nome) => ({
+                    nome: {
+                      contains: nome,
+                      mode: 'insensitive',
+                    },
+                  })),
+                },
+              },
+            },
+          }
+          : {},
+      ],
+    },
+    orderBy: {
+      [sortBy]: sortOrder, // ex: { nome: 'asc' }
+    },
+    skip: (page - 1) * limit, // paginação
+    take: limit, // paginação
   })
 
-  return recipes.map(item => ({
-    id: item.id,
-    nome: item.nome,
-    dt_criacao: item.dt_criacao,
-    categoriaId: item.categoriaId,
-    cozinheiroId: item.cozinheiroId,
-    livroId: item.livroId,
-    nomeCategoria: item.categoria.nome,
-    nomeCozinheiro: item.cozinheiro.nome,
-    nomeLivro: item.livro?.titulo ?? null,
-    ingredientes: item.ingredientes.map(ingrediente => ({
+  return recipes.map(recipe => ({
+    id: recipe.id,
+    nome: recipe.nome,
+    dt_criacao: recipe.dt_criacao,
+    categoriaId: recipe.categoriaId,
+    cozinheiroId: recipe.cozinheiroId,
+    livroId: recipe.livroId,
+    nomeCategoria: recipe.categoria.nome,
+    nomeCozinheiro: recipe.cozinheiro.nome,
+    nomeLivro: recipe.livro?.titulo ?? null,
+    ingredientes: recipe.ingredientes.map(ingrediente => ({
       ingredienteId: ingrediente.ingredienteId,
       quantidade: ingrediente.quantidade,
       medida: ingrediente.medida,
       nome: ingrediente.ingrediente.nome,
     })),
   }))
+
 }
 
-export async function getRecipeById(id: string) {
-  return prisma.receita.findUnique({
-    where: { id: Number(id) },
-    select: {
-      id: true,
-      nome: true,
-      dt_criacao: true,
-      categoriaId: true,
-      cozinheiroId: true,
-      livroId: true,
-      ingredientes: {
-        select: {
-          ingredienteId: true,
-          quantidade: true,
-          medida: true,
+  export async function getRecipeById(id: string) {
+    return prisma.receita.findUnique({
+      where: { id: Number(id) },
+      select: {
+        id: true,
+        nome: true,
+        dt_criacao: true,
+        categoriaId: true,
+        cozinheiroId: true,
+        livroId: true,
+        ingredientes: {
+          select: {
+            ingredienteId: true,
+            quantidade: true,
+            medida: true,
+          },
         },
       },
-    },
-  })
-}
-
-export async function updateRecipe(
-  id: string,
-  data: UpdateRecipeInput
-): Promise<Recipe> {
-  try {
-    const existingRecipe = await prisma.receita.findUnique({
-      where: { id: Number(id) },
     })
-    if (!existingRecipe) {
-      throw new Error('Receita não encontrada')
-    }
+  }
 
-    // Valida categoria, cozinheiro e livro somente se vierem no `data`
-    if (data.categoriaId) {
-      const categoria = await prisma.categoria.findUnique({
-        where: { id: data.categoriaId },
-      })
-      if (!categoria) throw new Error('Categoria não encontrada')
-    }
-
-    if (data.cozinheiroId) {
-      const cozinheiro = await prisma.cozinheiro.findUnique({
-        where: { id: data.cozinheiroId },
-      })
-      if (!cozinheiro) throw new Error('Cozinheiro não encontrado')
-    }
-
-    if (data.livroId !== undefined && data.livroId !== null) {
-      const livro = await prisma.livro.findUnique({
-        where: { id: data.livroId },
-      })
-      if (!livro) throw new Error('Livro não encontrado')
-    }
-
-    // Se ingredientes forem passados, validar
-    if (data.ingredientes) {
-      const ingredientesIds = data.ingredientes.map(i => i.ingredienteId)
-      const encontrados = await prisma.ingrediente.findMany({
-        where: { id: { in: ingredientesIds } },
-      })
-
-      if (encontrados.length !== ingredientesIds.length) {
-        throw new Error('Um ou mais ingredientes não foram encontrados')
-      }
-    }
-
-    // Transação para atualizar receita + ingredientes se existirem
-    const recipeUpdated = await prisma.$transaction(async tx => {
-      const updated = await tx.receita.update({
+  export async function updateRecipe(
+    id: string,
+    data: UpdateRecipeInput
+  ): Promise<Recipe> {
+    try {
+      const existingRecipe = await prisma.receita.findUnique({
         where: { id: Number(id) },
-        data: {
-          nome: data.nome,
-          dt_criacao: data.dt_criacao,
-          categoriaId: data.categoriaId,
-          cozinheiroId: data.cozinheiroId,
-          livroId: data.livroId,
-        },
-        select: {
-          id: true,
-          nome: true,
-          dt_criacao: true,
-          categoriaId: true,
-          cozinheiroId: true,
-          livroId: true,
-          livro: {
-            select: {
-              titulo: true,
-            },
+      })
+      if (!existingRecipe) {
+        throw new Error('Receita não encontrada')
+      }
+
+      // Valida categoria, cozinheiro e livro somente se vierem no `data`
+      if (data.categoriaId) {
+        const categoria = await prisma.categoria.findUnique({
+          where: { id: data.categoriaId },
+        })
+        if (!categoria) throw new Error('Categoria não encontrada')
+      }
+
+      if (data.cozinheiroId) {
+        const cozinheiro = await prisma.cozinheiro.findUnique({
+          where: { id: data.cozinheiroId },
+        })
+        if (!cozinheiro) throw new Error('Cozinheiro não encontrado')
+      }
+
+      if (data.livroId !== undefined && data.livroId !== null) {
+        const livro = await prisma.livro.findUnique({
+          where: { id: data.livroId },
+        })
+        if (!livro) throw new Error('Livro não encontrado')
+      }
+
+      // Se ingredientes forem passados, validar
+      if (data.ingredientes) {
+        const ingredientesIds = data.ingredientes.map(i => i.ingredienteId)
+        const encontrados = await prisma.ingrediente.findMany({
+          where: { id: { in: ingredientesIds } },
+        })
+
+        if (encontrados.length !== ingredientesIds.length) {
+          throw new Error('Um ou mais ingredientes não foram encontrados')
+        }
+      }
+
+      // Transação para atualizar receita  ingredientes se existirem
+      const recipeUpdated = await prisma.$transaction(async tx => {
+        const updated = await tx.receita.update({
+          where: { id: Number(id) },
+          data: {
+            nome: data.nome,
+            dt_criacao: data.dt_criacao,
+            categoriaId: data.categoriaId,
+            cozinheiroId: data.cozinheiroId,
+            livroId: data.livroId,
           },
-          categoria: {
-            select: {
-              nome: true,
+          select: {
+            id: true,
+            nome: true,
+            dt_criacao: true,
+            categoriaId: true,
+            cozinheiroId: true,
+            livroId: true,
+            livro: {
+              select: {
+                titulo: true,
+              },
             },
-          },
-          cozinheiro: {
-            select: {
-              nome: true,
+            categoria: {
+              select: {
+                nome: true,
+              },
             },
-          },
-          ingredientes: {
-            select: {
-              ingredienteId: true,
-              quantidade: true,
-              medida: true,
-              ingrediente: {
-                select: {
-                  nome: true,
+            cozinheiro: {
+              select: {
+                nome: true,
+              },
+            },
+            ingredientes: {
+              select: {
+                ingredienteId: true,
+                quantidade: true,
+                medida: true,
+                ingrediente: {
+                  select: {
+                    nome: true,
+                  },
                 },
               },
             },
           },
-        },
+        })
+
+        if (data.ingredientes) {
+          await tx.ingredienteReceita.deleteMany({
+            where: { receitaId: Number(id) },
+          })
+
+          await tx.ingredienteReceita.createMany({
+            data: data.ingredientes.map(i => ({
+              ingredienteId: i.ingredienteId,
+              quantidade: i.quantidade,
+              medida: i.medida,
+              receitaId: Number(id),
+            })),
+          })
+        }
+
+        return updated
       })
 
-      if (data.ingredientes) {
-        await tx.ingredienteReceita.deleteMany({
-          where: { receitaId: Number(id) },
-        })
-
-        await tx.ingredienteReceita.createMany({
-          data: data.ingredientes.map(i => ({
-            ingredienteId: i.ingredienteId,
-            quantidade: i.quantidade,
-            medida: i.medida,
-            receitaId: Number(id),
-          })),
-        })
+      return {
+        id: recipeUpdated.id,
+        nome: recipeUpdated.nome,
+        dt_criacao: recipeUpdated.dt_criacao,
+        categoriaId: recipeUpdated.categoriaId,
+        cozinheiroId: recipeUpdated.cozinheiroId,
+        livroId: recipeUpdated.livroId,
+        nomeCategoria: recipeUpdated.categoria.nome,
+        nomeCozinheiro: recipeUpdated.cozinheiro.nome,
+        nomeLivro: recipeUpdated.livro?.titulo ?? null,
+        ingredientes: recipeUpdated.ingredientes.map(ingrediente => ({
+          ingredienteId: ingrediente.ingredienteId,
+          quantidade: ingrediente.quantidade,
+          medida: ingrediente.medida,
+          nome: ingrediente.ingrediente.nome,
+        })),
       }
-
-      return updated
-    })
-
-    return {
-      id: recipeUpdated.id,
-      nome: recipeUpdated.nome,
-      dt_criacao: recipeUpdated.dt_criacao,
-      categoriaId: recipeUpdated.categoriaId,
-      cozinheiroId: recipeUpdated.cozinheiroId,
-      livroId: recipeUpdated.livroId,
-      nomeCategoria: recipeUpdated.categoria.nome,
-      nomeCozinheiro: recipeUpdated.cozinheiro.nome,
-      nomeLivro: recipeUpdated.livro?.titulo ?? null,
-      ingredientes: recipeUpdated.ingredientes.map(ingrediente => ({
-        ingredienteId: ingrediente.ingredienteId,
-        quantidade: ingrediente.quantidade,
-        medida: ingrediente.medida,
-        nome: ingrediente.ingrediente.nome,
-      })),
+    } catch (error) {
+      console.error(error)
+      throw new Error(`Erro ao atualizar receita: ${error}`)
     }
-  } catch (error) {
-    console.error(error)
-    throw new Error(`Erro ao atualizar receita: ${error}`)
   }
-}
 
-export async function deleteRecipe(id: string) {
-  try {
-    const recipeId = Number(id)
+  export async function deleteRecipe(id: string) {
+    try {
+      const recipeId = Number(id)
 
-    // Deleta os testes relacionados
-    await prisma.teste.deleteMany({
-      where: { receitaId: recipeId },
-    })
+      // Deleta os testes relacionados
+      await prisma.teste.deleteMany({
+        where: { receitaId: recipeId },
+      })
 
-    // Deleta os ingredientes relacionados
-    await prisma.ingredienteReceita.deleteMany({
-      where: { receitaId: recipeId },
-    })
+      // Deleta os ingredientes relacionados
+      await prisma.ingredienteReceita.deleteMany({
+        where: { receitaId: recipeId },
+      })
 
-    // Deleta a receita
-    await prisma.receita.delete({
-      where: { id: recipeId },
-    })
+      // Deleta a receita
+      await prisma.receita.delete({
+        where: { id: recipeId },
+      })
 
-    return { message: 'Receita deletada com sucesso.' }
-  } catch (error) {
-    if (error instanceof PrismaClientKnownRequestError) {
-      if (error.code === 'P2003') {
-        throw new Error('Não é possível deletar: receita possui dependências.')
+      return { message: 'Receita deletada com sucesso.' }
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2003') {
+          throw new Error('Não é possível deletar: receita possui dependências.')
+        }
+        if (error.code === 'P2025') {
+          throw new Error('Receita não encontrada.')
+        }
       }
-      if (error.code === 'P2025') {
-        throw new Error('Receita não encontrada.')
-      }
+
+      throw new Error('Erro interno ao tentar deletar a receita.')
     }
-
-    throw new Error('Erro interno ao tentar deletar a receita.')
   }
-}

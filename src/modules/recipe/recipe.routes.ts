@@ -10,8 +10,9 @@ import {
   updateRecipeController,
 } from './recipe.controller'
 import {
-  recipeSchema,
   createRecipeSchema,
+  listRecipesQuerySchema,
+  recipeSchema,
   updateRecipeSchema,
 } from './recipe.schema'
 
@@ -36,6 +37,7 @@ export async function recipeRoutes(app: FastifyTypedInstance) {
     {
       schema: {
         tags: ['recipes'],
+        querystring: listRecipesQuerySchema,
         response: {
           200: z.array(recipeSchema),
           ...commonResponseSchema,

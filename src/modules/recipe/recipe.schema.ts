@@ -35,3 +35,21 @@ export const updateRecipeSchema = createRecipeSchema.partial().extend({
   ),
 })
 export type UpdateRecipeInput = z.infer<typeof updateRecipeSchema>
+
+export const listRecipesQuerySchema = z.object({
+  search: z.string().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+  ingredients: z
+    .union([z.string(), z.array(z.string())])
+    .transform((val) => (typeof val === 'string' ? [val] : val))
+    .optional(),
+  categories: z
+    .union([z.string(), z.array(z.string())])
+    .transform((val) => (typeof val === 'string' ? [val] : val))
+    .optional(),
+  sortBy: z.enum(['nome', 'dt_criacao']).default('nome'),
+  sortOrder: z.enum(['asc', 'desc']).default('asc'),
+});
+
+export type ListRecipesQuery = z.infer<typeof listRecipesQuerySchema>

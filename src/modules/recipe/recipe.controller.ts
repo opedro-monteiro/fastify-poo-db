@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { NotFoundError } from '../../error'
 import { idParamSchema } from '../../schemas/common.schema'
-import { createRecipeSchema, updateRecipeSchema } from './recipe.schema'
+import { createRecipeSchema, listRecipesQuerySchema, updateRecipeSchema } from './recipe.schema'
 import {
   createRecipe,
   deleteRecipe,
@@ -34,11 +34,20 @@ export async function createRecipeController(
 }
 
 export async function listRecipesController(
-  _: FastifyRequest,
+  req: FastifyRequest,
   res: FastifyReply
 ) {
-  const items = await listRecipes()
-  return res.send(items)
+
+  const parsed = listRecipesQuerySchema.safeParse(req.query);
+
+  if (!parsed.success) {
+    return res.status(400).send({ error: parsed.error.flatten() });
+  }
+
+  const filters = parsed.data;
+  const items = await listRecipes(filters)
+
+  return res.send(items);
 }
 
 export async function getRecipeByIdController(
