@@ -6,12 +6,17 @@ import {
   createCooksController,
   deleteCooksController,
   getCooksByIdController,
+  getOldestCooksController,
+  listCooksRankingsByYearController,
   listCookssController,
   updateCooksController,
 } from './cooks.controller'
 import {
+  CooksDetailedSchema,
+  cooksRankingSchemaByYear,
   cooksSchema,
   createCooksSchema,
+  listCooksRankingsByYearQuerySchema,
   updateCooksSchema,
 } from './cooks.schema'
 
@@ -43,6 +48,35 @@ export async function cooksRoutes(app: FastifyTypedInstance) {
       },
     },
     listCookssController
+  )
+
+  app.get(
+    '/cooks/ranking',
+    {
+      schema: {
+        tags: ['cooks'],
+        querystring: listCooksRankingsByYearQuerySchema,
+        response: {
+          200: z.array(cooksRankingSchemaByYear),
+          ...commonResponseSchema,
+        },
+      },
+    },
+    listCooksRankingsByYearController
+  )
+
+  app.get(
+    '/cooks/oldest',
+    {
+      schema: {
+        tags: ['cooks'],
+        response: {
+          200: CooksDetailedSchema,
+          ...commonResponseSchema,
+        },
+      },
+    },
+    getOldestCooksController
   )
 
   app.get(

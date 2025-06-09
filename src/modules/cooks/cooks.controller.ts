@@ -1,12 +1,19 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { NotFoundError } from '../../error'
 import { idParamSchema } from '../../schemas/common.schema'
-import { createCooksSchema, updateCooksSchema } from './cooks.schema'
+import {
+  CooksDetailed,
+  createCooksSchema,
+  listCooksRankingsByYearQuerySchema,
+  updateCooksSchema,
+} from './cooks.schema'
 import {
   createCooks,
   deleteCooks,
   getCooksById,
+  getOldestCook,
   listCooks,
+  listCooksChampionsByYear,
   updateCooks,
 } from './cooks.service'
 
@@ -38,6 +45,29 @@ export async function listCookssController(
   res: FastifyReply
 ) {
   const items = await listCooks()
+  return res.send(items)
+}
+
+export async function listCooksRankingsByYearController(
+  req: FastifyRequest,
+  res: FastifyReply
+) {
+  const parsed = listCooksRankingsByYearQuerySchema.safeParse(req.query)
+  if (!parsed.success)
+    return res.status(400).send({ error: parsed.error.flatten() })
+
+  const filters = parsed.data
+
+  const items = await listCooksChampionsByYear(filters)
+
+  return res.send(items)
+}
+
+export async function getOldestCooksController(
+  _: FastifyRequest,
+  res: FastifyReply
+) {
+  const items = await getOldestCook()
   return res.send(items)
 }
 

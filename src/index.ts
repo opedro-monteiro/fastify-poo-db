@@ -1,4 +1,4 @@
-import { fastifyCors } from '@fastify/cors'
+import cors, { fastifyCors } from '@fastify/cors'
 import { fastifySwagger } from '@fastify/swagger'
 import { fastifySwaggerUi } from '@fastify/swagger-ui'
 import { fastify } from 'fastify'
@@ -28,7 +28,7 @@ app.setValidatorCompiler(validatorCompiler)
 app.setSerializerCompiler(serializerCompiler)
 
 app.register(fastifyCors, {
-  origin: 'http://localhost:5173',
+  origin: ['*'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
